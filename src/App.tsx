@@ -38,7 +38,7 @@ export default function App() {
       tanEmail: payload.tan_email,
       tanPhone: payload.tan_phone,
     }
-    const data = await jsonFetch<{ callId: string }>(`${BFF_BASE}/bff/calls`, {
+    const data = await jsonFetch<{ callId: string }>(`${BFF_BASE}/api/bff/calls`, {
       method: 'POST',
       body: JSON.stringify(body),
     })
@@ -51,7 +51,7 @@ export default function App() {
     if (!lastCallId) { alert('Bitte zuerst „Vereinbaren“ klicken.'); return }
 
     const data = await jsonFetch<{ tokenB64: string; joinUrl?: string }>(
-      `${BFF_BASE}/bff/calls/${encodeURIComponent(lastCallId)}/token`,
+      `${BFF_BASE}/api/bff/calls/${encodeURIComponent(lastCallId)}/token`,
       { method: 'POST', body: JSON.stringify({ email: SCOPE_EMAIL }) }
     )
 
