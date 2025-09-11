@@ -15,11 +15,14 @@ function buildJoinUrl(callId: string, tidB64: string) {
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: { 'content-type': 'application/json', ...(init?.headers || {}) },
-    credentials: 'include',
+    credentials: 'omit', // <— WICHTIG: keine Cookies mitschicken
     ...init,
-  })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`)
-  return res.json()
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`${res.status} ${res.statusText}${text ? ` – ${text}` : ''}`);
+  }
+  return res.json();
 }
 
 export default function App() {

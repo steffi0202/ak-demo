@@ -27,10 +27,10 @@ export default function ScheduleDialog({ open, onClose, onCreate }: Props) {
       const callId = await onCreate({ tan_username, tan_email, tan_phone })
       setMsg(`Call erstellt (ID: ${callId}).`)
       setTimeout(onClose, 700)
-    } catch (err) {
-      console.error(err)
-      setMsg('Fehler beim Anlegen.')
-    }
+   } catch (err: any) {
+  console.error(err);
+  setMsg(`Fehler beim Anlegen: ${err?.message ?? 'unbekannt'}`);
+}
   }
 
   return (
