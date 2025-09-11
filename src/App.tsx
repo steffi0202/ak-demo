@@ -7,22 +7,27 @@ import ScheduleDialog from './pages/ScheduleDialog'
 import VideoSection from './pages/VideoSection'
 import { BFF_BASE, IFRAME_ORIGIN, SCOPE_EMAIL } from './config'
 
+// Basis-URL robust machen: trailing slashes entfernen -> vermeidet 308 Redirects -> vermeidet 405
+const API_BASE = (BFF_BASE || '').replace(/\/+$/, '')
+
 // baut https://demo.arztkonsultation.de/video/<callId>?tid=<tokenB64>
 function buildJoinUrl(callId: string, tidB64: string) {
   return `${IFRAME_ORIGIN}/video/${encodeURIComponent(callId)}?tid=${encodeURIComponent(tidB64)}`
 }
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
+  console.log('FETCH →', url, init?.method ?? 'GET') // Diagnose
   const res = await fetch(url, {
     headers: { 'content-type': 'application/json', ...(init?.headers || {}) },
-    credentials: 'omit', // <— WICHTIG: keine Cookies mitschicken
+    credentials: 'omit', // keine Cookies mitschicken
     ...init,
-  });
+  })
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`${res.status} ${res.statusText}${text ? ` – ${text}` : ''}`);
+    const text = await res.text().catch(() => '')
+    console.error('FETCH ERROR', res.status, res.statusText, text)
+    throw new Error(`${res.status} ${res.statusText}${text ? ` – ${text}` : ''}`)
   }
-  return res.json();
+  return res.json()
 }
 
 export default function App() {
@@ -30,15 +35,15 @@ export default function App() {
   const [lastCallId, setLastCallId] = useState<string | null>(null)
   const [joinUrl, setJoinUrl] = useState<string | null>(null)
 
-  // 1) Termin anlegen -> BFF /bff/calls => { callId }
+  // 1) Termin anlegen -> BFF /api/bff/calls => { callId }
   async function createCall(payload: { tan_username: string; tan_email?: string; tan_phone?: string }) {
     const body = {
-      forUserId: 212365, // TODO: Bei Bedarf dynamisch laden (z. B. /bff/users)
+      forUserId: 212365, // ggf. später dynamisch laden
       tanUsername: payload.tan_username,
       tanEmail: payload.tan_email,
       tanPhone: payload.tan_phone,
     }
-    const data = await jsonFetch<{ callId: string }>(`${BFF_BASE}/api/bff/calls`, {
+    const data = await jsonFetch<{ callId: string }>(`${API_BASE}/api/bff/calls`, {
       method: 'POST',
       body: JSON.stringify(body),
     })
@@ -46,12 +51,12 @@ export default function App() {
     return String(data.callId)
   }
 
-  // 2) Starten -> BFF /bff/calls/:id/token { email } => { tokenB64 }
+  // 2) Starten -> BFF /api/bff/calls/:id/token { email } => { tokenB64 }
   async function startVideo() {
     if (!lastCallId) { alert('Bitte zuerst „Vereinbaren“ klicken.'); return }
 
     const data = await jsonFetch<{ tokenB64: string; joinUrl?: string }>(
-      `${BFF_BASE}/api/bff/calls/${encodeURIComponent(lastCallId)}/token`,
+      `${API_BASE}/api/bff/calls/${encodeURIComponent(lastCallId)}/token`,
       { method: 'POST', body: JSON.stringify({ email: SCOPE_EMAIL }) }
     )
 
