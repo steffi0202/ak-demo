@@ -7,24 +7,20 @@ import ScheduleDialog from './pages/ScheduleDialog'
 import VideoSection from './pages/VideoSection'
 import { BFF_BASE, IFRAME_ORIGIN, SCOPE_EMAIL } from './config'
 
-// Basis-URL robust machen: trailing slashes entfernen -> vermeidet 308 Redirects -> vermeidet 405
 const API_BASE = (BFF_BASE || '').replace(/\/+$/, '')
 
-// baut https://demo.arztkonsultation.de/video/<callId>?tid=<tokenB64>
 function buildJoinUrl(callId: string, tidB64: string) {
   return `${IFRAME_ORIGIN}/video/${encodeURIComponent(callId)}?tid=${encodeURIComponent(tidB64)}`
 }
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  console.log('FETCH →', url, init?.method ?? 'GET') // Diagnose
   const res = await fetch(url, {
     headers: { 'content-type': 'application/json', ...(init?.headers || {}) },
-    credentials: 'omit', // keine Cookies mitschicken
+    credentials: 'omit',
     ...init,
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    console.error('FETCH ERROR', res.status, res.statusText, text)
     throw new Error(`${res.status} ${res.statusText}${text ? ` – ${text}` : ''}`)
   }
   return res.json()
@@ -35,10 +31,9 @@ export default function App() {
   const [lastCallId, setLastCallId] = useState<string | null>(null)
   const [joinUrl, setJoinUrl] = useState<string | null>(null)
 
-  // 1) Termin anlegen -> BFF /api/bff/calls => { callId }
   async function createCall(payload: { tan_username: string; tan_email?: string; tan_phone?: string }) {
     const body = {
-      forUserId: 212365, // ggf. später dynamisch laden
+      forUserId: 212365,
       tanUsername: payload.tan_username,
       tanEmail: payload.tan_email,
       tanPhone: payload.tan_phone,
@@ -51,48 +46,48 @@ export default function App() {
     return String(data.callId)
   }
 
-  // 2) Starten -> BFF /api/bff/calls/:id/token { email } => { tokenB64 }
   async function startVideo() {
     if (!lastCallId) { alert('Bitte zuerst „Vereinbaren“ klicken.'); return }
-
     const data = await jsonFetch<{ tokenB64: string; joinUrl?: string }>(
       `${API_BASE}/api/bff/calls/${encodeURIComponent(lastCallId)}/token`,
       { method: 'POST', body: JSON.stringify({ email: SCOPE_EMAIL }) }
     )
-
     const url = data.joinUrl || buildJoinUrl(lastCallId, data.tokenB64)
-    if (!url.startsWith(IFRAME_ORIGIN)) {
-      alert('Ungültige Video-URL (Origin nicht erlaubt).')
-      return
-    }
-
+    if (!url.startsWith(IFRAME_ORIGIN)) { alert('Ungültige Video-URL (Origin nicht erlaubt).'); return }
     setJoinUrl(url)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
-    <>
+    <div className="app"> {/* <-- NEU: Full-height Flex-Container */}
       <Header />
 
-      <main className="container">
+      <main className="container app-main"> {/* <-- NEU: flex:1 */}
         <Routes>
-          <Route path="/" element={
-            <>
-              <Home onSchedule={() => setDialogOpen(true)} onStart={startVideo} />
-              <VideoSection callId={lastCallId} url={joinUrl} onClose={() => setJoinUrl(null)} />
-            </>
-          } />
+          <Route
+            path="/"
+            element={
+              <>
+                <Home
+                  onSchedule={() => setDialogOpen(true)}
+                  onStart={startVideo}
+                  hasCall={!!lastCallId}
+                />
+                <VideoSection callId={lastCallId} url={joinUrl} onClose={() => setJoinUrl(null)} />
+              </>
+            }
+          />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
 
       <Footer />
-
+      
       <ScheduleDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onCreate={createCall}
       />
-    </>
+    </div>
   )
 }
