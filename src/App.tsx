@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState } from 'react'
 import Header from './components/Header'
@@ -8,21 +9,16 @@ import VideoSection from './pages/VideoSection'
 import { BFF_BASE, IFRAME_ORIGIN, SCOPE_EMAIL } from './config'
 
 const API_BASE = (BFF_BASE || '').replace(/\/+$/, '')
-
 function buildJoinUrl(callId: string, tidB64: string) {
   return `${IFRAME_ORIGIN}/video/${encodeURIComponent(callId)}?tid=${encodeURIComponent(tidB64)}`
 }
-
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: { 'content-type': 'application/json', ...(init?.headers || {}) },
     credentials: 'omit',
     ...init,
   })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`${res.status} ${res.statusText}${text ? ` – ${text}` : ''}`)
-  }
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text().catch(()=>'')}`)
   return res.json()
 }
 
@@ -30,20 +26,21 @@ export default function App() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [lastCallId, setLastCallId] = useState<string | null>(null)
   const [joinUrl, setJoinUrl] = useState<string | null>(null)
+  const hasCall = !!lastCallId;
 
   async function createCall(payload: { tan_username: string; tan_email?: string; tan_phone?: string }) {
-    const body = {
-      forUserId: 212365,
-      tanUsername: payload.tan_username,
-      tanEmail: payload.tan_email,
-      tanPhone: payload.tan_phone,
-    }
     const data = await jsonFetch<{ callId: string }>(`${API_BASE}/api/bff/calls`, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        forUserId: 212365,
+        tanUsername: payload.tan_username,
+        tanEmail: payload.tan_email,
+        tanPhone: payload.tan_phone,
+      }),
     })
-    setLastCallId(String(data.callId))
-    return String(data.callId)
+    const id = String(data.callId)
+    setLastCallId(id)
+    return id
   }
 
   async function startVideo() {
@@ -53,27 +50,29 @@ export default function App() {
       { method: 'POST', body: JSON.stringify({ email: SCOPE_EMAIL }) }
     )
     const url = data.joinUrl || buildJoinUrl(lastCallId, data.tokenB64)
-    if (!url.startsWith(IFRAME_ORIGIN)) { alert('Ungültige Video-URL (Origin nicht erlaubt).'); return }
+    if (!url.startsWith(IFRAME_ORIGIN)) { alert('Ungültige Video-URL.'); return }
     setJoinUrl(url)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
-    <div className="app"> {/* <-- NEU: Full-height Flex-Container */}
+    <>
       <Header />
 
-      <main className="container app-main"> {/* <-- NEU: flex:1 */}
+      <main>
         <Routes>
           <Route
             path="/"
             element={
               <>
-                <Home
-                  onSchedule={() => setDialogOpen(true)}
-                  onStart={startVideo}
-                  hasCall={!!lastCallId}
-                />
-                <VideoSection callId={lastCallId} url={joinUrl} onClose={() => setJoinUrl(null)} />
+                {/* Home bleibt schmal in der Container-Breite */}
+                <div className="container">
+                  <Home onSchedule={() => setDialogOpen(true)} onStart={startVideo} hasCall={hasCall} />
+                  
+                </div>
+
+                {/* Video ist full-width und unabhängig von .container */}
+                <VideoSection callId={lastCallId} url={joinUrl} />
               </>
             }
           />
@@ -82,12 +81,12 @@ export default function App() {
       </main>
 
       <Footer />
-      
+
       <ScheduleDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onCreate={createCall}
       />
-    </div>
+    </>
   )
 }
