@@ -136,14 +136,31 @@ input:focus, select:focus {
   margin-top: 8px;
 }
 
-.video { margin-top: 24px; }
-.video-frame { height: 95vh; }
-.video-frame iframe {
+/* --- Video Full-Width, zentriert --- */
+.video { 
+  padding: 24px 0;
+}
+
+.video-shell {
+  /* zentriert und vom Viewport abhängig */
+  width: min(1400px, 96vw);
+  margin: 0 auto;                 /* Zentrierung */
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--shadow);
+  height: min(calc(100vh - 160px), 920px);
+}
+
+.video-shell iframe {
+  display: block;  
   width: 100%;
   height: 100%;
   border: 0;
-  border-radius: 10px;
 }
+
+.video-frame { height: auto !important; }
+.video-frame iframe { width: 100% !important; height: 100% !important; }
 
 .muted { color: var(--muted); font-size: 14px; }
 .hidden { display: none; }
