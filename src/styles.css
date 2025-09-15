@@ -1,8 +1,9 @@
 :root {
   --bg: #f7f8fa;
-  --text: #111827;
+  --text: #4C545B;
+  --heading: #2A3960;
   --muted: #6b7280;
-  --brand: #2563eb;
+  --brand: #508BC7;
   --brand-hover: #1e40af;
   --border: #e5e7eb;
   --card: #ffffff;
@@ -18,7 +19,9 @@ body {
   background: var(--bg);
   font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
 }
-
+h1 {
+  color: var(--heading);
+}
 /* --- NEW: App Layout so Footer stays at bottom --- */
 .app {
   min-height: 100%;
@@ -39,7 +42,7 @@ body {
 }
 .header-inner { height: 64px; display: flex; align-items: center; justify-content: space-between; }
 .nav { display: flex; gap: 8px; }
-.nav a { padding: 8px 12px; border-radius: 10px; color: #374151; text-decoration: none; }
+.nav a { padding: 8px 12px; border-radius: 10px; color: #2A3960; text-decoration: none; }
 .nav a:hover { background: #f3f4f6; }
 .nav a.active { background: var(--brand); color: #fff; box-shadow: var(--shadow); }
 

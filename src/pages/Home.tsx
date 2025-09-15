@@ -8,7 +8,7 @@ export default function Home({ onSchedule, onStart, hasCall }: Props) {
   return (
     <section className="hero">
       <h1>Videosprechstunde</h1>
-      <p>Kurz zwei Klicks: Termin anlegen oder direkt starten.</p>
+      <p>Bitte Termin für die Videosprechstunde vereinbaren</p>
       <div className="actions">
         <button className="btn btn-primary" onClick={onSchedule}>
           📅 Videosprechstunde vereinbaren
