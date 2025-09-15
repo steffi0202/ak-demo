@@ -46,6 +46,13 @@ h1 {
 .nav a:hover { background: #f3f4f6; }
 .nav a.active { background: var(--brand); color: #fff; box-shadow: var(--shadow); }
 
+.logo-img,
+.logo-svg {
+  height: 40px;
+  width: auto;
+  display: block;
+}
+
 .footer {
   border-top: 1px solid var(--border);
   background: #fff;
