@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/bff': {
-        target: 'https://ak-kpr8p6ezw-steffis-projects-44b1523a.vercel.app',
+        target: 'https://ak-5ij8yzbkz-steffis-projects-44b1523a.vercel.app',
         changeOrigin: true,
         secure: true,
       },
