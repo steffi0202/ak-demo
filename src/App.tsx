@@ -1,4 +1,3 @@
-// src/App.tsx
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState } from 'react'
 import Header from './components/Header'
@@ -27,6 +26,13 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json()
 }
 
+type CreatePayload = {
+  tan_username: string
+  tan_email?: string
+  tan_phone?: string
+  begin: number // Unix-Timestamp (Sekunden)
+}
+
 export default function App() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [lastCallId, setLastCallId] = useState<string | null>(null)
@@ -34,7 +40,7 @@ export default function App() {
   const hasCall = !!lastCallId
 
   // 1) Termin anlegen -> BFF /api/bff/calls => { callId }
-  async function createCall(payload: { tan_username: string; tan_email?: string; tan_phone?: string }) {
+  async function createCall(payload: CreatePayload) {
     const data = await jsonFetch<{ callId: string }>(`${API_BASE}/api/bff/calls`, {
       method: 'POST',
       body: JSON.stringify({
@@ -42,6 +48,7 @@ export default function App() {
         tanUsername: payload.tan_username,
         tanEmail: payload.tan_email,
         tanPhone: payload.tan_phone,
+        begin: payload.begin, // <-- neu: Unix-Sekunden
       }),
     })
     const id = String(data.callId)
@@ -78,12 +85,10 @@ export default function App() {
             path="/"
             element={
               <>
-                {/* Home in Container-Breite */}
                 <div className="container">
                   <Home onSchedule={() => setDialogOpen(true)} onStart={startVideo} hasCall={hasCall} />
                 </div>
 
-                {/* Video full-width (eigene Styles .video-full) */}
                 <VideoSection callId={lastCallId} url={joinUrl} />
               </>
             }
