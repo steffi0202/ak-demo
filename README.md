@@ -1,69 +1,79 @@
-# React + TypeScript + Vite
+# ak-demo – Demo-Frontend für die Videosprechstunde
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ein schlankes React/Vite-Frontend, das Termine (Calls) anlegt, den Videocall startet und beim Event `CALL_CLOSED` das iFrame schließt.  
+Das Frontend spricht **immer** mit der BFF (`ak-bff`), die Authentifizierung & Mapping übernimmt.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech-Stack
+- React + Vite + TypeScript
+- HashRouter (für GitHub Pages)
+- Eigenes CSS (keine UI-Framework-Abhängigkeit)
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Environments
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### `.env.development`
+```env
+VITE_BFF_BASE=
+VITE_IFRAME_ORIGIN=http://localhost:5173
+VITE_SCOPE_EMAIL=peter.niemann+demo@arztkonsultation.de
+```
+- `VITE_BFF_BASE` bleibt **leer** → der Dev-Server proxyt auf die BFF.
+
+### `.env.production`
+```env
+VITE_BFF_BASE=https://<deine-bff>.vercel.app
+VITE_IFRAME_ORIGIN=https://demo.arztkonsultation.de
+VITE_SCOPE_EMAIL=peter.niemann+demo@arztkonsultation.de
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Development & Build
+```bash
+# Node 18+ empfohlen
+npm install
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
+# lokaler Dev-Server (http://localhost:5173)
+npm run dev
+
+# Production-Build
+npm run build
+
+# Lokale Vorschau des Builds
+npm run preview
+```
+
+---
+
+## Proxy (Dev)
+In `vite.config.ts` ist der Dev-Proxy auf die BFF konfiguriert:
+```ts
+server: {
+  proxy: {
+    '/api/bff': {
+      target: 'https://<deine-bff>.vercel.app',
+      changeOrigin: true,
+      secure: true,
     },
   },
-])
+}
 ```
+
+---
+
+## Routing / Deployment (GitHub Pages)
+- Es wird der **HashRouter** verwendet → funktioniert auch unter  
+  `https://<user>.github.io/ak-demo/#/`.
+- In `vite.config.ts` ist `base` auf `'/ak-demo/'` gesetzt, sobald `NODE_ENV=production`.
+
+---
+
+## iFrame-Events
+Die App lauscht auf `window.postMessage`-Events aus dem iFrame.  
+Bei `CALL_CLOSED` wird das iFrame geschlossen (State `joinUrl=null`).
+
