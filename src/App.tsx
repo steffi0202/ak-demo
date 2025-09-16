@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState } from 'react'
 import Header from './components/Header'
@@ -6,8 +7,6 @@ import Home from './pages/Home'
 import ScheduleDialog from './pages/ScheduleDialog'
 import VideoSection from './pages/VideoSection'
 import { BFF_BASE, IFRAME_ORIGIN, SCOPE_EMAIL } from './config'
-
-const API_BASE = (BFF_BASE || '').replace(/\/+$/, '')
 
 function buildJoinUrl(callId: string, tidB64: string) {
   return `${IFRAME_ORIGIN}/video/${encodeURIComponent(callId)}?tid=${encodeURIComponent(tidB64)}`
@@ -30,7 +29,7 @@ type CreatePayload = {
   tan_username: string
   tan_email?: string
   tan_phone?: string
-  begin: number // Unix-Timestamp (Sekunden)
+  begin: number // Unix-Sekunden
 }
 
 export default function App() {
@@ -39,16 +38,19 @@ export default function App() {
   const [joinUrl, setJoinUrl] = useState<string | null>(null)
   const hasCall = !!lastCallId
 
-  // 1) Termin anlegen -> BFF /api/bff/calls => { callId }
+  // 1) Termin anlegen -> BFF /api/bff/calls (camelCase)
   async function createCall(payload: CreatePayload) {
-    const data = await jsonFetch<{ callId: string }>(`${API_BASE}/api/bff/calls`, {
+    const base = (BFF_BASE || '')
+    const data = await jsonFetch<{ callId: string }>(`${base}/api/bff/calls`, {
       method: 'POST',
       body: JSON.stringify({
         forUserId: 212365,
+        callType: 'tan',
         tanUsername: payload.tan_username,
         tanEmail: payload.tan_email,
         tanPhone: payload.tan_phone,
-        begin: payload.begin, // <-- neu: Unix-Sekunden
+        tanDataAgreed: true,
+        begin: payload.begin,
       }),
     })
     const id = String(data.callId)
@@ -62,8 +64,9 @@ export default function App() {
       alert('Bitte zuerst „Vereinbaren“ klicken.')
       return
     }
+    const base = (BFF_BASE || '')
     const data = await jsonFetch<{ tokenB64: string; joinUrl?: string }>(
-      `${API_BASE}/api/bff/calls/${encodeURIComponent(lastCallId)}/token`,
+      `${base}/api/bff/calls/${encodeURIComponent(lastCallId)}/token`,
       { method: 'POST', body: JSON.stringify({ email: SCOPE_EMAIL }) }
     )
     const url = data.joinUrl || buildJoinUrl(lastCallId, data.tokenB64)
@@ -78,7 +81,6 @@ export default function App() {
   return (
     <div className="app">
       <Header />
-
       <main className="app-main">
         <Routes>
           <Route
@@ -88,7 +90,6 @@ export default function App() {
                 <div className="container">
                   <Home onSchedule={() => setDialogOpen(true)} onStart={startVideo} hasCall={hasCall} />
                 </div>
-
                 <VideoSection callId={lastCallId} url={joinUrl} />
               </>
             }
@@ -96,9 +97,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
-
       <Footer />
-
       <ScheduleDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
