@@ -40,7 +40,7 @@ export default function App() {
 
   // 1) Termin anlegen -> BFF /api/bff/calls (camelCase)
   async function createCall(payload: CreatePayload) {
-    const base = (BFF_BASE || '')
+    const base = BFF_BASE || ''
     const data = await jsonFetch<{ callId: string }>(`${base}/api/bff/calls`, {
       method: 'POST',
       body: JSON.stringify({
@@ -64,7 +64,7 @@ export default function App() {
       alert('Bitte zuerst „Vereinbaren“ klicken.')
       return
     }
-    const base = (BFF_BASE || '')
+    const base = BFF_BASE || ''
     const data = await jsonFetch<{ tokenB64: string; joinUrl?: string }>(
       `${base}/api/bff/calls/${encodeURIComponent(lastCallId)}/token`,
       { method: 'POST', body: JSON.stringify({ email: SCOPE_EMAIL }) }
@@ -90,14 +90,24 @@ export default function App() {
                 <div className="container">
                   <Home onSchedule={() => setDialogOpen(true)} onStart={startVideo} hasCall={hasCall} />
                 </div>
-                <VideoSection callId={lastCallId} url={joinUrl} />
+
+                <VideoSection
+                  callId={lastCallId}
+                  url={joinUrl}
+                  onClose={() => {
+                    setJoinUrl(null)
+                    setLastCallId(null)
+                  }}
+                />
               </>
             }
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
+
       <Footer />
+
       <ScheduleDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
